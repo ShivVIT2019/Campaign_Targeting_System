@@ -165,7 +165,7 @@ Predict purchase probability
 👨‍💻 Author
 Sivasai Atchyuta AKella
 
-LinkedIn: [Your LinkedIn]
+LinkedIn: https://www.linkedin.com/in/atchyut/
 
-Email: [Your Email]
+Email: sakella@binghamton.edu
 
