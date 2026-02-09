@@ -82,7 +82,7 @@ function App() {
   
   useEffect(() => {
     axios.get(`${API_URL}/metrics`)
-      .then(res => setTotalPredictions(res.data.total_predictions))
+      .then(res => setTotalPredictions(res.data.live_metrics.total_predictions))
       .catch(() => setTotalPredictions(0));
   }, [currentPage, result]);
 
@@ -136,7 +136,7 @@ function App() {
       borderBottom: "1px solid #333",
       position: "relative"
     }}>
-      {(currentPage === "predict" || currentPage === "batch" || currentPage === "live") && (
+      {currentPage === "predict" && totalPredictions > 0 && (
         <div style={{
           position: "absolute",
           right: "20px",
