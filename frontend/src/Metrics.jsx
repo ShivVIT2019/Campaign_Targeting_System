@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Metrics.css';
 
-const API_URL = 'https://campaign-backend-vuf4.onrender.com';
+const API_URL = import.meta.env.PROD 
+  ? 'https://campaign-backend-vuf4.onrender.com'
+  : 'http://localhost:8000';
 
 function Metrics() {
   const [metrics, setMetrics] = useState(null);

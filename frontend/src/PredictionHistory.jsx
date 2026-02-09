@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.PROD 
+  ? "https://campaign-backend-vuf4.onrender.com"
+  : "http://localhost:8000";
 
 function PredictionHistory() {
   const [history, setHistory] = useState([]);

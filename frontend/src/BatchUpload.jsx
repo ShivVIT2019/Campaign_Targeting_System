@@ -1,7 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.PROD 
+  ? "https://campaign-backend-vuf4.onrender.com"
+  : "http://localhost:8000";
 
 function BatchUpload() {
   const [file, setFile] = useState(null);
