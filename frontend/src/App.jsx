@@ -1861,7 +1861,10 @@ import PredictionHistory from "./PredictionHistory.jsx";
 import ABTestSimulator from "./ABTestSimulator.jsx";
 import LiveMetrics from "./LiveMetrics.jsx";  // ADD THIS
 
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.PROD 
+  ? "https://campaign-targeting-backend.onrender.com"
+  : "http://localhost:8000";
+
 
 function App() {
   const [currentPage, setCurrentPage] = useState("predict");
