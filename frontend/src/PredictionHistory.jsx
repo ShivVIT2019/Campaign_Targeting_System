@@ -1,23 +1,14 @@
-import { useState, useEffect } from "react";
+ import { useState, useEffect } from "react";
 
 function PredictionHistory() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    // Load history from sessionStorage (clears on page refresh)
-    const savedHistory = sessionStorage.getItem('predictionHistory');
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
-    }
-
     // Listen for new predictions from App component
+    // NO sessionStorage - history only exists in memory (clears on refresh)
     const handleNewPrediction = (event) => {
       const newPrediction = event.detail;
-      setHistory(prev => {
-        const updated = [newPrediction, ...prev].slice(0, 10); // Keep last 10
-        sessionStorage.setItem('predictionHistory', JSON.stringify(updated));
-        return updated;
-      });
+      setHistory(prev => [newPrediction, ...prev].slice(0, 10)); // Keep last 10
     };
 
     window.addEventListener('newPrediction', handleNewPrediction);
