@@ -1,4 +1,4 @@
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Metrics from "./Metrics.jsx";
 import BatchUpload from "./BatchUpload.jsx";
@@ -225,19 +225,20 @@ function App() {
         </button>
       </div>
 
-      {/* Full-width Stats Bar */}
-      {(currentPage === "predict" || currentPage === "batch" || currentPage === "live") && (
+      {/* Full-width Stats Bar - ONLY on Predictions and Batch Upload */}
+      {(currentPage === "predict" || currentPage === "batch") && (
         <div style={{
-          padding: "12px 20px",
-          backgroundColor: "#242424",
+          width: "100%",
+          padding: "14px 0",
+          backgroundColor: "#0a0a0a",
           borderTop: "1px solid #333",
           textAlign: "center",
-          fontSize: "14px",
-          color: "#aaa"
+          fontSize: "15px",
+          color: "#888"
         }}>
-          📊 <span style={{ color: "#0066ff", fontWeight: "bold", fontSize: "16px" }}>
+          📊 <span style={{ color: "#0066ff", fontWeight: "bold", fontSize: "18px" }}>
             {totalPredictions.toLocaleString()}
-          </span> predictions made today
+          </span> <span style={{ color: "#aaa" }}>predictions made today</span>
         </div>
       )}
     </div>
