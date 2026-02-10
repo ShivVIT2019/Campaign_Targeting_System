@@ -136,7 +136,7 @@ function App() {
       borderBottom: "1px solid #333",
       position: "relative"
     }}>
-      {currentPage === "predict" && totalPredictions > 0 && (
+      {(currentPage === "predict" || currentPage === "batch" || currentPage === "live") && (
         <div style={{
           position: "absolute",
           right: "20px",
@@ -171,6 +171,21 @@ function App() {
       </button>
       
       <button
+        onClick={() => setCurrentPage("live")}
+        style={{
+          padding: "12px 24px",
+          borderRadius: "8px",
+          border: "none",
+          backgroundColor: currentPage === "live" ? "#0066ff" : "#333",
+          color: "#fff",
+          cursor: "pointer",
+          fontWeight: "600"
+        }}
+      >
+        📊 Live Performance
+      </button>
+
+      <button
         onClick={() => setCurrentPage("metrics")}
         style={{
           padding: "12px 24px",
@@ -182,7 +197,7 @@ function App() {
           fontWeight: "600"
         }}
       >
-        📊 Model Metrics
+        📈 Model Info
       </button>
 
       <button
@@ -213,21 +228,6 @@ function App() {
         }}
       >
         🧪 A/B Test
-      </button>
-
-      <button
-        onClick={() => setCurrentPage("live")}
-        style={{
-          padding: "12px 24px",
-          borderRadius: "8px",
-          border: "none",
-          backgroundColor: currentPage === "live" ? "#0066ff" : "#333",
-          color: "#fff",
-          cursor: "pointer",
-          fontWeight: "600"
-        }}
-      >
-        📊 Live Performance
       </button>
     </div>
   );
@@ -397,16 +397,16 @@ function App() {
               <h2 style={{ margin: "0 0 20px 0", fontSize: "20px", color: "#fff" }}>📊 Behavior Metrics</h2>
 
               {[
-                ["Administrative", "Administrative Pages"],
-                ["Administrative_Duration", "Administrative Duration (s)"],
-                ["Informational", "Informational Pages"],
-                ["Informational_Duration", "Informational Duration (s)"],
-                ["ProductRelated", "Product Pages"],
-                ["ProductRelated_Duration", "Product Duration (s)"],
-                ["BounceRates", "Bounce Rate"],
-                ["ExitRates", "Exit Rate"],
-                ["PageValues", "Page Value"],
-                ["SpecialDay", "Special Day Proximity"],
+                ["Administrative", "Account/Settings Pages Visited"],
+                ["Administrative_Duration", "Time on Account Pages (seconds)"],
+                ["Informational", "Help/Info Pages Visited"],
+                ["Informational_Duration", "Time on Help Pages (seconds)"],
+                ["ProductRelated", "Products Viewed"],
+                ["ProductRelated_Duration", "Time Viewing Products (seconds)"],
+                ["BounceRates", "Quick Exit Rate (0 = stayed, 1 = left fast)"],
+                ["ExitRates", "Left Without Buying (0-1 scale)"],
+                ["PageValues", "Shopping Intent Score (higher = more interested)"],
+                ["SpecialDay", "Near a Holiday? (0 = no, 1 = yes)"],
               ].map(([key, label]) => (
                 <div key={key}>
                   <label style={labelStyle}>{label}</label>

@@ -59,6 +59,21 @@ function BatchUpload() {
     a.click();
   };
 
+  const downloadSampleCSV = () => {
+    // Sample CSV with 3 example rows
+    const sampleData = `Administrative,Administrative_Duration,Informational,Informational_Duration,ProductRelated,ProductRelated_Duration,BounceRates,ExitRates,PageValues,SpecialDay,Month,OperatingSystems,Browser,Region,TrafficType,VisitorType,Weekend
+0,0,0,0,1,0,0.02,0.05,0,0,May,2,2,1,2,Returning_Visitor,False
+2,40,1,15,5,120,0.01,0.03,25,0,Dec,1,1,1,1,New_Visitor,True
+1,20,0,0,3,60,0.015,0.04,10,0.2,Nov,2,1,1,2,Returning_Visitor,False`;
+
+    const blob = new Blob([sampleData], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sample_visitors.csv";
+    a.click();
+  };
+
   return (
     <div style={{ 
       minHeight: "100vh", 
@@ -141,6 +156,28 @@ function BatchUpload() {
           >
             {loading ? "🔄 Processing..." : "🚀 Upload & Predict"}
           </button>
+
+          {/* Download Sample CSV Button */}
+          <div style={{ marginTop: "20px", textAlign: "center" }}>
+            <button
+              onClick={downloadSampleCSV}
+              style={{
+                padding: "12px 24px",
+                fontSize: "14px",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: "1px solid #0066ff",
+                backgroundColor: "transparent",
+                color: "#0066ff",
+                cursor: "pointer"
+              }}
+            >
+              📥 Download Sample CSV Template
+            </button>
+            <p style={{ margin: "10px 0 0 0", fontSize: "12px", color: "#888" }}>
+              Download a pre-filled example to see the correct format
+            </p>
+          </div>
 
           {/* Sample Format */}
           <div style={{ 
@@ -247,7 +284,7 @@ function BatchUpload() {
                           fontSize: "12px",
                           fontWeight: "600"
                         }}>
-                          {pred.decision === "TARGET" ? "✅ TARGET" : "❌ SKIP"}
+                          {pred.decision === "TARGET" ? "TARGET" : "SKIP"}
                         </span>
                       </td>
                     </tr>
