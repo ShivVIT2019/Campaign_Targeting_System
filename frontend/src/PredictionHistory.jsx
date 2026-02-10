@@ -1,30 +1,28 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const API_URL = import.meta.env.PROD 
-  ? "https://campaign-backend-vuf4.onrender.com"
-  : "http://localhost:8000";
 
 function PredictionHistory() {
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchHistory();
-    const interval = setInterval(fetchHistory, 3000); // Refresh every 3 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchHistory = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/history`);
-      setHistory(res.data.history);
-      setLoading(false);
-    } catch (err) {
-      console.error("Failed to fetch history:", err);
-      setLoading(false);
+    // Load history from sessionStorage (clears on page refresh)
+    const savedHistory = sessionStorage.getItem('predictionHistory');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
     }
-  };
+
+    // Listen for new predictions from App component
+    const handleNewPrediction = (event) => {
+      const newPrediction = event.detail;
+      setHistory(prev => {
+        const updated = [newPrediction, ...prev].slice(0, 10); // Keep last 10
+        sessionStorage.setItem('predictionHistory', JSON.stringify(updated));
+        return updated;
+      });
+    };
+
+    window.addEventListener('newPrediction', handleNewPrediction);
+    return () => window.removeEventListener('newPrediction', handleNewPrediction);
+  }, []);
 
   const formatTime = (isoString) => {
     const date = new Date(isoString);
@@ -34,21 +32,6 @@ function PredictionHistory() {
       second: '2-digit'
     });
   };
-
-  if (loading) {
-    return (
-      <div style={{ 
-        backgroundColor: "#242424", 
-        padding: "20px", 
-        borderRadius: "12px",
-        border: "1px solid #333",
-        textAlign: "center",
-        color: "#aaa"
-      }}>
-        Loading history...
-      </div>
-    );
-  }
 
   if (history.length === 0) {
     return (
@@ -89,7 +72,7 @@ function PredictionHistory() {
           fontWeight: "normal",
           marginLeft: "auto"
         }}>
-          Last {history.length}
+          Last {history.length} (clears on refresh)
         </span>
       </h3>
 
@@ -161,4 +144,3 @@ function PredictionHistory() {
 }
 
 export default PredictionHistory;
- 
