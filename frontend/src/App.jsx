@@ -6,6 +6,8 @@ import PredictionHistory from "./PredictionHistory.jsx";
 import ABTestSimulator from "./ABTestSimulator.jsx";
 import LiveMetrics from "./LiveMetrics.jsx";
 import "./AppRedesign.css";
+import "./cache-break.css";
+
 
 const API_URL = import.meta.env.PROD 
   ? "https://campaign-backend-vuf4.onrender.com"
