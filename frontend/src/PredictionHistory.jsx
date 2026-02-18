@@ -13,19 +13,6 @@ function PredictionHistory() {
     return () => window.removeEventListener('newPrediction', handleNewPrediction);
   }, []);
 
-  const formatTime = (isoString) => {
-    const normalized = isoString.endsWith('Z') || isoString.includes('+') 
-      ? isoString 
-      : isoString + 'Z';
-    const date = new Date(normalized);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit',
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    });
-  };
-
   if (history.length === 0) {
     return (
       <div style={{ 
@@ -79,17 +66,13 @@ function PredictionHistory() {
               borderRadius: "8px",
               border: `1px solid ${entry.decision === "TARGET" ? "#28a74533" : "#dc354533"}`,
               display: "grid",
-              gridTemplateColumns: "60px 120px 1fr 80px 100px",
+              gridTemplateColumns: "140px 1fr 80px 100px",
               alignItems: "center",
               gap: "12px",
               fontSize: "13px",
               animation: idx === 0 ? "slideIn 0.5s ease" : "none"
             }}
           >
-            <span style={{ color: "#666", fontSize: "12px" }}>
-              {formatTime(entry.timestamp)}
-            </span>
-
             <span style={{ color: "#aaa" }}>
               {entry.visitor_type.replace("_", " ")}
             </span>
@@ -115,7 +98,7 @@ function PredictionHistory() {
               fontWeight: "600",
               textAlign: "center"
             }}>
-              {entry.decision === "TARGET" ? "TARGET" : "SKIP"}
+              {entry.decision === "TARGET" ? "✅ TARGET" : "❌ SKIP"}
             </span>
           </div>
         ))}
