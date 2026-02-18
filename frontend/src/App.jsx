@@ -5,6 +5,7 @@ import BatchUpload from "./BatchUpload.jsx";
 import PredictionHistory from "./PredictionHistory.jsx";
 import ABTestSimulator from "./ABTestSimulator.jsx";
 import LiveMetrics from "./LiveMetrics.jsx";
+import LandingPage from "./LandingPage.jsx";
 import "./AppRedesign.css";
 import "./cache-break.css";
 
@@ -57,6 +58,7 @@ const TRAFFIC_TYPE_OPTIONS = [
 ];
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [currentPage, setCurrentPage] = useState("predict");
   
   const [form, setForm] = useState({
@@ -164,6 +166,10 @@ function App() {
       </div>
     </nav>
   );
+
+  if (showLanding) {
+    return <LandingPage onEnter={() => setShowLanding(false)} />;
+  }
 
   return (
     <div className="app">

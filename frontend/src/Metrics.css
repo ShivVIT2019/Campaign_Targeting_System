@@ -5,9 +5,13 @@
 }
 
 .metrics-container h2 {
-  color: #2c3e50;
+  color: #7c3aed;
   margin-bottom: 30px;
   font-size: 28px;
+  background: linear-gradient(90deg, #7c3aed, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .metrics-container h3 {
