@@ -1,14 +1,12 @@
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 function PredictionHistory() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    // Listen for new predictions from App component
-    // NO sessionStorage - history only exists in memory (clears on refresh)
     const handleNewPrediction = (event) => {
       const newPrediction = event.detail;
-      setHistory(prev => [newPrediction, ...prev].slice(0, 10)); // Keep last 10
+      setHistory(prev => [newPrediction, ...prev].slice(0, 10));
     };
 
     window.addEventListener('newPrediction', handleNewPrediction);
@@ -16,11 +14,15 @@ function PredictionHistory() {
   }, []);
 
   const formatTime = (isoString) => {
-    const date = new Date(isoString);
+    const normalized = isoString.endsWith('Z') || isoString.includes('+') 
+      ? isoString 
+      : isoString + 'Z';
+    const date = new Date(normalized);
     return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
   };
 
@@ -84,22 +86,18 @@ function PredictionHistory() {
               animation: idx === 0 ? "slideIn 0.5s ease" : "none"
             }}
           >
-            {/* Time */}
             <span style={{ color: "#666", fontSize: "12px" }}>
               {formatTime(entry.timestamp)}
             </span>
 
-            {/* Visitor Info */}
             <span style={{ color: "#aaa" }}>
               {entry.visitor_type.replace("_", " ")}
             </span>
 
-            {/* Month */}
             <span style={{ color: "#888" }}>
               {entry.month}
             </span>
 
-            {/* Probability */}
             <span style={{ 
               color: "#0066ff", 
               fontWeight: "600",
@@ -108,7 +106,6 @@ function PredictionHistory() {
               {(entry.probability * 100).toFixed(1)}%
             </span>
 
-            {/* Decision Badge */}
             <span style={{ 
               padding: "4px 8px",
               borderRadius: "6px",
@@ -118,7 +115,7 @@ function PredictionHistory() {
               fontWeight: "600",
               textAlign: "center"
             }}>
-              {entry.decision === "TARGET" ? "✅ TARGET" : "❌ SKIP"}
+              {entry.decision === "TARGET" ? "TARGET" : "SKIP"}
             </span>
           </div>
         ))}
