@@ -5,9 +5,13 @@ import BatchUpload from "./BatchUpload.jsx";
 import PredictionHistory from "./PredictionHistory.jsx";
 import ABTestSimulator from "./ABTestSimulator.jsx";
 import LiveMetrics from "./LiveMetrics.jsx";
+import LandingPage from "./LandingPage.jsx";
+import AIAssistant from "./AIAssistant.jsx";
 import "./AppRedesign.css";
+import "./cache-break.css";
 
-const API_URL = import.meta.env.PROD 
+
+const API_URL = import.meta.env.PROD
   ? "https://campaign-backend-vuf4.onrender.com"
   : "http://localhost:8000";
 
@@ -55,8 +59,9 @@ const TRAFFIC_TYPE_OPTIONS = [
 ];
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [currentPage, setCurrentPage] = useState("predict");
-  
+
   const [form, setForm] = useState({
     Administrative: 0,
     Administrative_Duration: 0.0,
@@ -80,7 +85,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [totalPredictions, setTotalPredictions] = useState(0);
-  
+
   useEffect(() => {
     axios.get(`${API_URL}/metrics`)
       .then(res => setTotalPredictions(res.data.live_metrics.total_predictions))
@@ -100,7 +105,7 @@ function App() {
     try {
       const res = await axios.post(`${API_URL}/predict`, form);
       setResult(res.data);
-      
+
       const historyEntry = {
         prediction_id: res.data.prediction_id,
         timestamp: res.data.timestamp,
@@ -127,7 +132,7 @@ function App() {
           <span className="nav-icon">🎯</span>
           <span className="nav-label">Predictions</span>
         </button>
-        
+
         <button
           onClick={() => setCurrentPage("live")}
           className={`nav-tab ${currentPage === "live" ? "active" : ""}`}
@@ -159,15 +164,27 @@ function App() {
           <span className="nav-icon">🧪</span>
           <span className="nav-label">A/B Test</span>
         </button>
+
+        <button
+          onClick={() => setCurrentPage("ai")}
+          className={`nav-tab ${currentPage === "ai" ? "active" : ""}`}
+        >
+          <span className="nav-icon">💬</span>
+          <span className="nav-label">AI Assistant</span>
+        </button>
       </div>
     </nav>
   );
+
+  if (showLanding) {
+    return <LandingPage onEnter={() => setShowLanding(false)} />;
+  }
 
   return (
     <div className="app">
       <div className="bg-animation"></div>
       <div className="grain-overlay"></div>
-      
+
       <header className="app-header">
         <div className="header-icon">🎯</div>
         <h1 className="header-title">Campaign Targeting System</h1>
@@ -203,8 +220,8 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Month</label>
-                  <select 
-                    value={form.Month} 
+                  <select
+                    value={form.Month}
                     onChange={(e) => update("Month", e.target.value)}
                     className="form-select"
                   >
@@ -214,8 +231,8 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Visitor Type</label>
-                  <select 
-                    value={form.VisitorType} 
+                  <select
+                    value={form.VisitorType}
                     onChange={(e) => update("VisitorType", e.target.value)}
                     className="form-select"
                   >
@@ -270,9 +287,9 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Did they leave quickly?</label>
-                  <select 
-                    value={form.BounceRates} 
-                    onChange={(e) => update("BounceRates", parseFloat(e.target.value))} 
+                  <select
+                    value={form.BounceRates}
+                    onChange={(e) => update("BounceRates", parseFloat(e.target.value))}
                     className="form-select"
                   >
                     <option value="0">No - They stayed and browsed</option>
@@ -283,9 +300,9 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Exited without purchase?</label>
-                  <select 
-                    value={form.ExitRates} 
-                    onChange={(e) => update("ExitRates", parseFloat(e.target.value))} 
+                  <select
+                    value={form.ExitRates}
+                    onChange={(e) => update("ExitRates", parseFloat(e.target.value))}
                     className="form-select"
                   >
                     <option value="0">No - Made a purchase</option>
@@ -296,9 +313,9 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Is it near a holiday?</label>
-                  <select 
-                    value={form.SpecialDay} 
-                    onChange={(e) => update("SpecialDay", parseFloat(e.target.value))} 
+                  <select
+                    value={form.SpecialDay}
+                    onChange={(e) => update("SpecialDay", parseFloat(e.target.value))}
                     className="form-select"
                   >
                     <option value="0">No</option>
@@ -320,8 +337,8 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Operating System</label>
-                  <select 
-                    value={form.OperatingSystems} 
+                  <select
+                    value={form.OperatingSystems}
                     onChange={(e) => update("OperatingSystems", e.target.value)}
                     className="form-select"
                   >
@@ -333,8 +350,8 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Browser</label>
-                  <select 
-                    value={form.Browser} 
+                  <select
+                    value={form.Browser}
                     onChange={(e) => update("Browser", e.target.value)}
                     className="form-select"
                   >
@@ -346,8 +363,8 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Region</label>
-                  <select 
-                    value={form.Region} 
+                  <select
+                    value={form.Region}
                     onChange={(e) => update("Region", e.target.value)}
                     className="form-select"
                   >
@@ -359,8 +376,8 @@ function App() {
 
                 <div className="form-group">
                   <label className="form-label">Traffic Source</label>
-                  <select 
-                    value={form.TrafficType} 
+                  <select
+                    value={form.TrafficType}
                     onChange={(e) => update("TrafficType", e.target.value)}
                     className="form-select"
                   >
@@ -415,10 +432,10 @@ function App() {
                   <div className="metric-box">
                     <span className="metric-label">Confidence</span>
                     <span className={`metric-value ${
-                      result.confidence_level === "HIGH" ? "success" : 
+                      result.confidence_level === "HIGH" ? "success" :
                       result.confidence_level === "MEDIUM" ? "warning" : "danger"
                     }`}>
-                      {result.confidence_level === "HIGH" ? "🟢" : 
+                      {result.confidence_level === "HIGH" ? "🟢" :
                        result.confidence_level === "MEDIUM" ? "🟡" : "🔴"} {result.confidence_level}
                     </span>
                   </div>
@@ -430,7 +447,7 @@ function App() {
                     <span className="risk-value">{result.risk_score.toFixed(1)}/100</span>
                   </div>
                   <div className="risk-bar">
-                    <div 
+                    <div
                       className={`risk-fill ${
                         result.risk_score < 20 ? "low" :
                         result.risk_score < 40 ? "medium-low" :
@@ -442,18 +459,18 @@ function App() {
                   <p className="risk-description">
                     {result.risk_score < 20 ? "✅ Very confident decision" :
                      result.risk_score < 40 ? "✓ Reliable decision" :
-                     result.risk_score < 60 ? "⚠️ Moderate uncertainty" : 
+                     result.risk_score < 60 ? "⚠️ Moderate uncertainty" :
                      "⚠️ Decision near threshold - review carefully"}
                   </p>
                 </div>
 
                 <div className="result-details">
                   <p>
-                    <strong>Threshold:</strong> {result.threshold} | 
+                    <strong>Threshold:</strong> {result.threshold} |
                     <strong> Base Conversion Rate:</strong> {(result.base_rate * 100).toFixed(2)}%
                   </p>
                   <p className="result-recommendation">
-                    {result.decision === "TARGET" 
+                    {result.decision === "TARGET"
                       ? "✨ This visitor shows high purchase intent. Prioritize for targeted campaigns."
                       : "💡 Low conversion probability. Consider alternative engagement strategies."}
                   </p>
@@ -469,6 +486,7 @@ function App() {
         {currentPage === "metrics" && <Metrics />}
         {currentPage === "batch" && <BatchUpload />}
         {currentPage === "abtest" && <ABTestSimulator />}
+        {currentPage === "ai" && <AIAssistant />}
       </main>
     </div>
   );
