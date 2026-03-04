@@ -25,7 +25,7 @@ Risk score: distance from 0.5 threshold * 100. Lower = more confident decision.
 
 def answer_question(question: str) -> str:
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         prompt = f"""You are an AI assistant for the Campaign Targeting System. 
 Answer questions using this knowledge base:
 
