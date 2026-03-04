@@ -1,11 +1,11 @@
 import os
-from google import generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 CAMPAIGN_KNOWLEDGE = """
 The Campaign Targeting System uses a Random Forest classifier trained on 12,330 online shopping sessions with 89.32% AUC-ROC score. Base conversion rate is 15.47%.
@@ -25,7 +25,6 @@ Risk score: distance from 0.5 threshold * 100. Lower = more confident decision.
 
 def answer_question(question: str) -> str:
     try:
-        model = genai.GenerativeModel("gemini-pro")
         prompt = f"""You are an AI assistant for the Campaign Targeting System. 
 Answer questions using this knowledge base:
 
@@ -34,7 +33,10 @@ Answer questions using this knowledge base:
 Question: {question}
 
 Give a clear, concise answer."""
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return f"Sorry, I couldn't process that question. Error: {str(e)}"
