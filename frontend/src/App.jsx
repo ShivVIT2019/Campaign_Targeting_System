@@ -1,14 +1,11 @@
- import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Metrics from "./Metrics.jsx";
 import BatchUpload from "./BatchUpload.jsx";
 import PredictionHistory from "./PredictionHistory.jsx";
 import ABTestSimulator from "./ABTestSimulator.jsx";
 import LiveMetrics from "./LiveMetrics.jsx";
-import LandingPage from "./LandingPage.jsx";
 import "./AppRedesign.css";
-import "./cache-break.css";
-
 
 const API_URL = import.meta.env.PROD 
   ? "https://campaign-backend-vuf4.onrender.com"
@@ -58,7 +55,6 @@ const TRAFFIC_TYPE_OPTIONS = [
 ];
 
 function App() {
-  const [showLanding, setShowLanding] = useState(true);
   const [currentPage, setCurrentPage] = useState("predict");
   
   const [form, setForm] = useState({
@@ -166,10 +162,6 @@ function App() {
       </div>
     </nav>
   );
-
-  if (showLanding) {
-    return <LandingPage onEnter={() => setShowLanding(false)} />;
-  }
 
   return (
     <div className="app">
