@@ -100,7 +100,7 @@ def build_vectorstore():
     docs = splitter.split_documents([Document(page_content=CAMPAIGN_KNOWLEDGE)])
 
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model="models/text-embedding-004",
         google_api_key=GEMINI_API_KEY
     )
 
