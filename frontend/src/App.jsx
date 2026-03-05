@@ -475,6 +475,33 @@ function App() {
                       : "💡 Low conversion probability. Consider alternative engagement strategies."}
                   </p>
                 </div>
+
+                {result.market_context && result.market_context.enriched && (
+                  <div className="market-intel-card">
+                    <div className="market-intel-header">
+                      <span className="market-intel-icon">🌐</span>
+                      <h3 className="market-intel-title">Live Market Intelligence</h3>
+                      <span className="market-intel-badge">powered by Tavily</span>
+                    </div>
+                    <div className="market-intel-body">
+                      {result.market_context.summary.split("\n").map((line, i) => (
+                        line.trim() && (
+                          <p key={i} className="market-intel-line">{line}</p>
+                        )
+                      ))}
+                    </div>
+                    {result.market_context.sources && result.market_context.sources.length > 0 && (
+                      <div className="market-intel-sources">
+                        <span className="sources-label">Sources: </span>
+                        {result.market_context.sources.map((src, i) => (
+                          <a key={i} href={src} target="_blank" rel="noreferrer" className="source-link">
+                            [{i + 1}]
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
