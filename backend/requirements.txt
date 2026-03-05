@@ -8,3 +8,4 @@ python-multipart==0.0.12
 joblib==1.4.2
 google-genai==1.7.0
 python-dotenv==1.0.1
+tavily-python>=0.3.0

@@ -15,6 +15,7 @@ from io import StringIO
 from collections import defaultdict
 from datetime import date
 from rag_engine import answer_question
+from tavily_enrichment import fetch_market_context
 
 # Configure logging
 logging.basicConfig(
@@ -130,6 +131,7 @@ class PredictResponse(BaseModel):
     timestamp: str
     confidence_level: str
     risk_score: float
+    market_context: dict = {}
 
 class HealthResponse(BaseModel):
     status: str
@@ -306,6 +308,11 @@ def predict(req: PredictRequest):
         live_metrics["visitor_types"][req.VisitorType] += 1
         live_metrics["months"][req.Month] += 1
 
+        # Tavily: fetch real-time market context for this visitor segment
+        region_label = req.Region if not req.Region.isdigit() else f"Region {req.Region}"
+        traffic_label = req.TrafficType if not req.TrafficType.isdigit() else f"Traffic Type {req.TrafficType}"
+        market_context = fetch_market_context(region_label, traffic_label)
+
         return {
             "probability": prob,
             "decision": decision,
@@ -314,7 +321,8 @@ def predict(req: PredictRequest):
             "prediction_id": prediction_id,
             "timestamp": datetime.now().isoformat(),
             "confidence_level": confidence_level,
-            "risk_score": float(risk_score)
+            "risk_score": float(risk_score),
+            "market_context": market_context
         }
 
     except Exception as e:
