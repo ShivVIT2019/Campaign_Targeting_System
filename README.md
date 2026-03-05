@@ -1,171 +1,131 @@
-# 🎯 Campaign Targeting System
+# 🎯 AI-Powered Campaign Targeting System
 
-Production-grade ML system for predicting customer purchase probability to optimize marketing campaigns.
+An end-to-end machine learning system that predicts online shopper purchase probability to enable data-driven campaign targeting — achieving **30× ROI improvement** over random selection in simulated A/B testing.
 
-## 📊 Project Overview
-
-**Problem:** Marketing teams waste budget targeting low-intent visitors.
-
-**Solution:** ML-powered prediction system that identifies high-probability purchasers, enabling targeted campaigns with 89.3% prediction accuracy.
-
-**Business Impact:**
-- Optimize marketing spend by targeting top 20% most likely buyers
-- Reduce customer acquisition cost
-- Improve conversion rates through data-driven targeting
+**Live Demo:** [shivvit2019.github.io/Campaign_Targeting_System](https://shivvit2019.github.io/Campaign_Targeting_System/)
 
 ---
 
-## 🏗️ Architecture
+## What It Does
 
-┌─────────────┐ ┌──────────────┐ ┌─────────────┐
-│ React │────▶│ FastAPI │────▶│ ML Model │
-│ Frontend │ │ Backend │ │ (Logistics) │
-└─────────────┘ └──────────────┘ └─────────────┘
+Given a visitor's session behavior (pages viewed, time spent, traffic source, region, etc.), the system predicts whether they are likely to make a purchase and recommends whether to target them with an ad campaign.
 
-
-
-**Tech Stack:**
-- **ML:** Python, scikit-learn, pandas, numpy
-- **Backend:** FastAPI, Pydantic, Uvicorn
-- **Frontend:** React, Vite, Axios
-- **DevOps:** Docker, GitHub Actions, logging
+Each prediction now includes **real-time market intelligence** pulled live from the web via the [Tavily Search API](https://tavily.com) — grounding decisions in current market trends rather than static training data alone.
 
 ---
 
-## 📈 Model Performance
+## Key Results
 
-- **ROC-AUC:** 0.8932 (89.3% accuracy)
-- **Dataset:** 12,330 online shopping sessions
-- **Features:** 17 behavioral + demographic variables
-- **Base conversion rate:** 15.47%
-
-**Key Features:**
-- Page visit patterns (Administrative, Informational, Product)
-- Session duration metrics
-- Bounce/Exit rates
-- Visitor type & timing
-- System identifiers (OS, Browser, Region)
+| Metric | Value |
+|---|---|
+| Model | Random Forest Classifier |
+| Training Data | 12,330 online shopping sessions |
+| AUC-ROC | 89.32% |
+| Ad Spend Reduction | 76% |
+| Buyer Retention | 74% |
+| ROI vs Random Targeting | ~30× |
 
 ---
 
-## 🚀 Quick Start
+## Features
 
-### Prerequisites
-- Python 3.9+
-- Node.js 18+
-- npm
+- **Real-time predictions** — single visitor inference with confidence tiers (High / Medium / Low)
+- **Live Market Intelligence** — Tavily-powered web search enriches every prediction with current ecommerce trends
+- **Batch predictions** — upload a CSV and score thousands of visitors at once
+- **A/B Test Simulator** — compare ML targeting vs random selection vs target-all strategies
+- **Live Metrics Dashboard** — track prediction volume, targeting rate, and confidence distribution in real time
+- **AI Assistant** — Gemini-powered RAG chatbot answers questions about the model, features, and results
 
-### Option 1: Docker (Recommended)
+---
+
+## Tech Stack
+
+**Backend**
+- FastAPI — 8 RESTful endpoints
+- scikit-learn — Random Forest classifier
+- Tavily Python SDK — real-time market context enrichment
+- Google Gemini (gemini-2.5-flash) — AI assistant via RAG
+- Deployed on Render
+
+**Frontend**
+- React + Vite
+- Axios
+- Deployed on GitHub Pages
+
+---
+
+## Project Structure
+
+```
+Campaign_Targeting_System/
+├── backend/
+│   ├── main.py                 # FastAPI app + all endpoints
+│   ├── rag_engine.py           # Gemini RAG + Tavily knowledge enrichment
+│   ├── tavily_enrichment.py    # Tavily search integration (new)
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── App.jsx             # Main app + Market Intel card
+│       ├── AIAssistant.jsx     # Gemini chat interface
+│       ├── LiveMetrics.jsx     # Real-time dashboard
+│       ├── BatchUpload.jsx     # CSV batch predictions
+│       └── ABTestSimulator.jsx # A/B test comparison
+└── ml/
+    ├── artifacts/model.joblib  # Trained Random Forest model
+    └── data/                   # Training dataset
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Health check + Tavily status |
+| POST | `/predict` | Single prediction + market context |
+| POST | `/predict-batch` | Batch CSV predictions |
+| POST | `/simulate-ab-test` | A/B test simulation |
+| GET | `/metrics` | Model performance metrics |
+| GET | `/live-metrics` | Real-time prediction stats |
+| GET | `/history` | Recent prediction history |
+| POST | `/chat` | AI assistant (Gemini + RAG + Tavily) |
+
+---
+
+## Running Locally
+
+**Backend**
 ```bash
-docker-compose up
-Backend: http://localhost:8000
-
-Frontend: http://localhost:5173
-
-Option 2: Manual Setup
-
-1. Train Model
-
-
-cd ml
-python3 train_and_export.py
-
-
-2. Start Backend
-
-
 cd backend
-pip3 install -r requirements.txt
-uvicorn main:app --reload --port 8000
+pip install -r requirements.txt
+cp .env.example .env   # add TAVILY_API_KEY and GEMINI_API_KEY
+uvicorn main:app --reload
+```
 
-
-3. Start Frontend
-
+**Frontend**
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
+Visit `http://localhost:5173` for the UI or `http://localhost:8000/docs` for the API playground.
 
-🧪 Testing
+---
 
-cd backend
-pip install pytest
-pytest test_api.py
+## Environment Variables
 
+```env
+TAVILY_API_KEY=tvly-dev-...     # from tavily.com
+GEMINI_API_KEY=...              # from Google AI Studio
+```
 
-📁 Project Structure
+---
 
-Campaign_Targeting_System/
-├── ml/
-│   ├── data/
-│   │   └── online_shoppers_intention.csv
-│   ├── train_and_export.py
-│   └── artifacts/
-│       └── model.joblib
-├── backend/
-│   ├── main.py
-│   ├── test_api.py
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── package.json
-│   └── Dockerfile
-├── .github/workflows/ci.yml
-├── docker-compose.yml
-└── README.md
+## How the Tavily Integration Works
 
+Every call to `/predict` triggers a Tavily search for real-time ecommerce trends matching the visitor's region and traffic type. Results are returned alongside the prediction as a `market_context` block and rendered in the UI as a **"Live Market Intelligence"** card.
 
-🎯 Use Cases
-E-commerce Marketing: Target high-intent visitors with personalized offers
+The AI Assistant (`/chat`) also uses Tavily to augment its static knowledge base with live web data before passing context to Gemini — making answers more current and accurate.
 
-Campaign Optimization: Allocate ad budget to top 20% probable buyers
-
-Customer Segmentation: Identify distinct behavioral patterns
-
-A/B Testing: Predict which segments respond to campaigns
-
-🛠️ Technical Highlights
-Production-ready: CI/CD pipeline, Docker, logging, monitoring
-
-Scalable: Stateless API, containerized deployment
-
-Tested: Automated tests for API endpoints
-
-Monitored: Request logging, prediction tracking
-
-Type-safe: Pydantic models for request validation
-
-📊 API Endpoints
-GET /health
-
-Health check with metrics
-
-{
-  "status": "ok",
-  "model_loaded": true,
-  "total_predictions": 42,
-  "base_conversion_rate": 0.1547
-}
-
-
-POST /predict
-
-Predict purchase probability
-
-{
-  "probability": 0.7234,
-  "decision": "TARGET",
-  "threshold": 0.50,
-  "prediction_id": "pred_20260205_1634_42"
-}
-
-👨‍💻 Author
-Sivasai Atchyuta AKella
-
-LinkedIn: https://www.linkedin.com/in/atchyut/
-
-Email: sakella@binghamton.edu
-
+Results are LRU-cached so repeated identical queries don't consume extra API credits.
