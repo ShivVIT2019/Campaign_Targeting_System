@@ -29,8 +29,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load model artifact
-BASE_DIR = Path(__file__).resolve().parent.parent
-ARTIFACT_PATH = BASE_DIR / "ml" / "artifacts" / "model.joblib"
+BASE_DIR = Path(__file__).resolve().parent
+ARTIFACT_PATH = BASE_DIR / "model.joblib"
 
 if not os.path.exists(ARTIFACT_PATH):
     logger.error(f"Model not found at {ARTIFACT_PATH}")

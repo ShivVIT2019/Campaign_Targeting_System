@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 const API_URL = import.meta.env.PROD 
-  ? "https://campaign-backend-vuf4.onrender.com"
+  ? "https://campaign-backend-405497784425.us-central1.run.app"
   : "http://localhost:8000";
 
 function ABTestSimulator() {
