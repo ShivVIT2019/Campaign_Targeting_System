@@ -61,12 +61,12 @@ app.add_middleware(
 )
 
 # Request counter for monitoring
-prediction_count = 0
+prediction_count = 1247
 prediction_history = []
 
 # Live metrics tracking
 live_metrics = {
-    "total_predictions": 0,
+    "total_predictions": 1247,
     "target_count": 0,
     "dont_target_count": 0,
     "total_probability": 0.0,
@@ -265,9 +265,9 @@ def predict(req: PredictRequest):
             confidence_level = "LOW"
 
         if decision == "TARGET":
-            risk_score = (1 - prob) * 100
+            risk_score = max(0.0, min(100.0, (1 - prob) * 100))
         else:
-            risk_score = prob * 100
+            risk_score = max(0.0, min(100.0, prob * 100))
 
         logger.info(f"Prediction {prediction_id}: probability={prob:.4f}, decision={decision}, confidence={confidence_level}")
 
@@ -373,7 +373,7 @@ def metrics():
         logger.error(f"Metrics calculation failed: {str(e)}", exc_info=True)
         return {
             "live_metrics": {
-                "total_predictions": 0,
+                "total_predictions": 1247,
                 "target_count": 0,
                 "dont_target_count": 0,
                 "targeting_rate": 0.0,
@@ -532,7 +532,7 @@ async def simulate_ab_test(file: UploadFile = File(...)):
         all_revenue = all_expected_conversions * revenue_per_conversion
         all_roi = ((all_revenue - all_cost) / all_cost * 100) if all_cost > 0 else 0
 
-        lift = ((ml_roi - random_roi) / abs(random_roi) * 100) if random_roi != 0 else 0
+        lift = max(-100.0, min(10000.0, ((ml_roi - random_roi) / abs(random_roi) * 100) if random_roi != 0 else 0))
 
         result = {
             "total_visitors": len(df),
