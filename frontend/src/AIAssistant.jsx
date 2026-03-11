@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 const API_URL = import.meta.env.PROD
-  ? "https://campaign-backend-405497784425.us-central1.run.app"
+  ? "https://campaign-targeting-backend-405497784425.us-central1.run.app"
   : "http://localhost:8000";
 
 const SUGGESTED_QUESTIONS = [
@@ -13,6 +13,55 @@ const SUGGESTED_QUESTIONS = [
   "Which visitor types convert best?",
   "How should I interpret the risk score?",
 ];
+
+// Simple markdown renderer — handles **bold**, *italic*, bullet lists
+function renderMarkdown(text) {
+  const lines = text.split("\n");
+  const elements = [];
+  let key = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Bullet points: lines starting with * or -
+    if (/^\s*[\*\-]\s+/.test(line)) {
+      const content = line.replace(/^\s*[\*\-]\s+/, "");
+      elements.push(
+        <div key={key++} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.2rem" }}>
+          <span style={{ color: "var(--accent-primary)", flexShrink: 0 }}>•</span>
+          <span>{inlineMarkdown(content)}</span>
+        </div>
+      );
+    }
+    // Empty line = spacer
+    else if (line.trim() === "") {
+      elements.push(<div key={key++} style={{ height: "0.4rem" }} />);
+    }
+    // Normal line
+    else {
+      elements.push(
+        <div key={key++} style={{ marginBottom: "0.1rem" }}>
+          {inlineMarkdown(line)}
+        </div>
+      );
+    }
+  }
+
+  return elements;
+}
+
+// Handle **bold** and *italic* inline
+function inlineMarkdown(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (/^\*\*[^*]+\*\*$/.test(part)) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    } else if (/^\*[^*]+\*$/.test(part)) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
 
 function AIAssistant() {
   const [messages, setMessages] = useState([
@@ -143,7 +192,6 @@ function AIAssistant() {
                 color: "var(--text-primary)",
                 fontSize: "0.9rem",
                 lineHeight: "1.6",
-                whiteSpace: "pre-wrap",
               }}
             >
               {msg.role === "assistant" && (
@@ -151,7 +199,7 @@ function AIAssistant() {
                   🤖 AI Assistant
                 </span>
               )}
-              {msg.text}
+              {msg.role === "assistant" ? renderMarkdown(msg.text) : msg.text}
             </div>
           </div>
         ))}
@@ -176,13 +224,7 @@ function AIAssistant() {
       </div>
 
       {/* Input Box */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.75rem",
-          alignItems: "center",
-        }}
-      >
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
         <input
           type="text"
           value={input}
