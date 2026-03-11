@@ -10,9 +10,6 @@ try:
 except Exception:
     _TAVILY_AVAILABLE = False
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=GEMINI_API_KEY)
-
 STATIC_CAMPAIGN_KNOWLEDGE = """
 The Campaign Targeting System uses a Random Forest classifier trained on 12,330 online shopping sessions with 89.32% AUC-ROC score. Base conversion rate is 15.47%.
 
@@ -39,8 +36,12 @@ def _get_knowledge() -> str:
 
 def answer_question(question: str) -> str:
     try:
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+        if not GEMINI_API_KEY:
+            return "AI Assistant is unavailable: GEMINI_API_KEY not configured."
+        client = genai.Client(api_key=GEMINI_API_KEY)
         knowledge = _get_knowledge()
-        prompt = f"""You are an AI assistant for the Campaign Targeting System. 
+        prompt = f"""You are an AI assistant for the Campaign Targeting System.
 Answer questions using this knowledge base:
 
 {knowledge}
