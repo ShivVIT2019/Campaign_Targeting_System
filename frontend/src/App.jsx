@@ -84,13 +84,9 @@ function App() {
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [totalPredictions, setTotalPredictions] = useState(0);
 
-  useEffect(() => {
-    axios.get(`${API_URL}/metrics`)
-      .then(res => setTotalPredictions(res.data.live_metrics.total_predictions))
-      .catch(() => setTotalPredictions(0));
-  }, [currentPage, result]);
+
+
 
   const visitorTypes = ["Returning_Visitor", "New_Visitor", "Other"];
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -190,10 +186,7 @@ function App() {
         <h1 className="header-title">Campaign Targeting System</h1>
         <p className="header-subtitle">AI-powered purchase probability prediction for targeted marketing</p>
         <div className="header-stats">
-          <div className="stat-badge">
-            <span className="stat-label">Total Predictions</span>
-            <span className="stat-value">{totalPredictions.toLocaleString()}</span>
-          </div>
+
           <div className="stat-badge">
             <span className="stat-label">Model Accuracy</span>
             <span className="stat-value">89.32%</span>
