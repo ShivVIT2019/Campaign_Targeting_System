@@ -1,58 +1,74 @@
+# backend/rag_engine.py
+
 import os
-from google import genai
+import chromadb
+from sentence_transformers import SentenceTransformer
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-try:
-    from tavily_enrichment import fetch_campaign_knowledge
-    _TAVILY_AVAILABLE = True
-except Exception:
-    _TAVILY_AVAILABLE = False
+KNOWLEDGE_CHUNKS = [
+    "Campaign targeting uses demographic filters such as age, gender, income level, and location to reach the right audience.",
+    "Behavioral targeting analyzes user activity like browsing history, purchase behavior, and app usage to personalize ads.",
+    "Lookalike audiences are built by finding users who share traits with your best existing customers using ML similarity models.",
+    "A/B testing campaigns helps compare two versions of an ad to determine which performs better based on click-through rate and conversions.",
+    "Retargeting campaigns re-engage users who previously interacted with a product but did not convert.",
+    "Predictive models use features like recency, frequency, and monetary value (RFM) to score customer likelihood to convert.",
+    "Campaign budget optimization automatically distributes ad spend across audience segments based on predicted ROI.",
+    "Contextual targeting places ads based on the content of the web page being viewed, not the user's personal data.",
+    "Geographic targeting allows campaigns to be shown only in specific cities, regions, or countries.",
+    "Interest-based targeting groups users by hobbies and interests inferred from their online activity.",
+    "Frequency capping limits how many times a single user sees the same ad to prevent ad fatigue.",
+    "Conversion tracking measures the number of users who completed a desired action after seeing a campaign ad.",
+    "Customer segmentation divides a customer base into groups based on shared characteristics for personalized campaigns.",
+    "Machine learning models like Random Forest and XGBoost are used to predict campaign click-through rates.",
+    "SHAP values explain which features most influenced a model's prediction for campaign targeting decisions.",
+    "Campaign performance metrics include CTR, CPC, ROAS, and CPA.",
+    "Natural language processing is used to analyze ad copy and match it with user intent signals.",
+    "Multi-touch attribution assigns credit to multiple touchpoints in a customer journey rather than just the last click.",
+    "Audience suppression prevents showing ads to users who already converted to avoid wasted budget.",
+    "Real-time bidding uses automated auctions to buy ad impressions instantly based on targeting criteria.",
+]
 
-STATIC_CAMPAIGN_KNOWLEDGE = """
-The Campaign Targeting System uses a Random Forest classifier trained on 12,330 online shopping sessions with 89.32% AUC-ROC score. Base conversion rate is 15.47%.
+# ── Load embedder directly (avoids broken ChromaDB wrapper) ──────────────────────
+print("Loading sentence transformer...")
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-Features: Administrative pages, Informational pages, ProductRelated pages and durations, BounceRates, ExitRates, PageValues, SpecialDay, Month, OperatingSystems, Browser, Region, TrafficType, VisitorType, Weekend.
+chroma_client = chromadb.Client()
+collection = chroma_client.get_or_create_collection(name="campaign_knowledge")
 
-PageValues is the strongest predictor. High ProductRelated duration = high intent. High BounceRates/ExitRates = low intent. Returning visitors convert better. November/December have highest conversions.
+if collection.count() == 0:
+    print("Building vector index...")
+    embeddings = embedder.encode(KNOWLEDGE_CHUNKS).tolist()
+    collection.add(
+        documents=KNOWLEDGE_CHUNKS,
+        embeddings=embeddings,
+        ids=[f"chunk_{i}" for i in range(len(KNOWLEDGE_CHUNKS))]
+    )
+    print(f"Indexed {len(KNOWLEDGE_CHUNKS)} chunks.")
 
-Confidence tiers: HIGH (probability > 0.70), MEDIUM (0.50-0.70), LOW (< 0.50).
+def query_rag(user_question: str, top_k: int = 4) -> str:
+    query_embedding = embedder.encode([user_question]).tolist()
+    results = collection.query(query_embeddings=query_embedding, n_results=top_k)
+    retrieved_chunks = results["documents"][0]
+    context = "\n".join([f"- {chunk}" for chunk in retrieved_chunks])
 
-Business impact: 76% ad spend reduction, 74% buyer retention, ~30x ROI over random selection.
+    prompt = f"""You are a campaign targeting assistant with expert knowledge in digital marketing and ML-driven ad targeting.
 
-A/B testing compares: ML Model vs Random Selection vs Target Everyone vs Target No One. Cost per contact $1, revenue per conversion $50.
+Use ONLY the context below to answer the user's question. If the answer is not in the context, say "I don't have enough information on that."
 
-Risk score: distance from 0.5 threshold * 100. Lower = more confident decision.
-"""
+Context:
+{context}
 
-def _get_knowledge() -> str:
-    """Return combined static + live Tavily knowledge."""
-    if _TAVILY_AVAILABLE:
-        live = fetch_campaign_knowledge()
-        if live:
-            return STATIC_CAMPAIGN_KNOWLEDGE + "\n\n=== LIVE MARKET INTELLIGENCE (via Tavily) ===\n" + live
-    return STATIC_CAMPAIGN_KNOWLEDGE
+User Question: {user_question}
 
-def answer_question(question: str) -> str:
-    try:
-        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-        if not GEMINI_API_KEY:
-            return "AI Assistant is unavailable: GEMINI_API_KEY not configured."
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        knowledge = _get_knowledge()
-        prompt = f"""You are an AI assistant for the Campaign Targeting System.
-Answer questions using this knowledge base:
+Answer:"""
 
-{knowledge}
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    response = model.generate_content(prompt)
+    return response.text.strip()
 
-Question: {question}
-
-Give a clear, concise answer."""
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        return f"Sorry, I couldn't process that question. Error: {str(e)}"
+if __name__ == "__main__":
+    print(query_rag("How does retargeting work?"))

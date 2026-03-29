@@ -14,8 +14,9 @@ from fastapi import File, UploadFile
 from io import StringIO
 from collections import defaultdict
 from datetime import date
-from rag_engine import answer_question
+from rag_engine import query_rag
 from tavily_enrichment import fetch_market_context
+
 
 # Configure logging
 logging.basicConfig(
@@ -28,13 +29,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 # Load model artifact
 BASE_DIR = Path(__file__).resolve().parent
 ARTIFACT_PATH = BASE_DIR / "model.joblib"
 
+
 if not os.path.exists(ARTIFACT_PATH):
     logger.error(f"Model not found at {ARTIFACT_PATH}")
     raise FileNotFoundError(f"Model not found. Run train_and_export.py first.")
+
 
 logger.info("Loading model...")
 bundle = joblib.load(str(ARTIFACT_PATH))
@@ -42,11 +46,13 @@ model = bundle["model"]
 base_rate = bundle.get("base_rate", 0.15)
 logger.info(f"Model loaded successfully. Base rate: {base_rate:.4f}")
 
+
 app = FastAPI(
     title="Campaign Targeting API",
     version="1.0.0",
     description="Production-grade ML prediction API"
 )
+
 
 # CORS
 app.add_middleware(
@@ -60,9 +66,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Request counter for monitoring
 prediction_count = 1247
 prediction_history = []
+
 
 # Live metrics tracking
 live_metrics = {
@@ -79,6 +87,7 @@ live_metrics = {
     "visitor_types": defaultdict(int),
     "months": defaultdict(int)
 }
+
 
 # Helper function to sanitize JSON
 def sanitize_for_json(obj):
@@ -103,6 +112,7 @@ def sanitize_for_json(obj):
 
 # ── Pydantic Models ────────────────────────────────────────────────────────
 
+
 class PredictRequest(BaseModel):
     Administrative: int = 0
     Administrative_Duration: float = 0.0
@@ -122,6 +132,7 @@ class PredictRequest(BaseModel):
     VisitorType: str = Field(default="Returning_Visitor")
     Weekend: bool = False
 
+
 class PredictResponse(BaseModel):
     probability: float
     decision: str
@@ -133,14 +144,17 @@ class PredictResponse(BaseModel):
     risk_score: float
     market_context: dict = {}
 
+
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
     total_predictions: int
     base_conversion_rate: float
 
+
 class ChatRequest(BaseModel):
     question: str
+
 
 class ChatResponse(BaseModel):
     answer: str
@@ -148,6 +162,7 @@ class ChatResponse(BaseModel):
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
+
 
 @app.get("/health", response_model=HealthResponse)
 def health():
@@ -308,7 +323,6 @@ def predict(req: PredictRequest):
         live_metrics["visitor_types"][req.VisitorType] += 1
         live_metrics["months"][req.Month] += 1
 
-        # Tavily: fetch real-time market context for this visitor segment
         region_label = req.Region if not req.Region.isdigit() else f"Region {req.Region}"
         traffic_label = req.TrafficType if not req.TrafficType.isdigit() else f"Traffic Type {req.TrafficType}"
         market_context = fetch_market_context(region_label, traffic_label)
@@ -599,7 +613,7 @@ async def chat(request: ChatRequest):
     """AI-powered Q&A about campaign analytics using RAG + Gemini"""
     try:
         logger.info(f"Chat question received: {request.question}")
-        answer = answer_question(request.question)
+        answer = query_rag(request.question)       # ← ONLY THIS LINE CHANGED
         logger.info("Chat answer generated successfully")
         return {"answer": answer, "question": request.question}
     except Exception as e:
