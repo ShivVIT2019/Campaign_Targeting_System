@@ -1,6 +1,6 @@
 # 🎯 AI-Powered Campaign Targeting System
 
-An end-to-end machine learning system that predicts online shopper purchase probability to enable data-driven campaign targeting — achieving **30× ROI improvement** over random selection in simulated A/B testing.
+An end-to-end machine learning system that predicts online shopper purchase probability to enable data-driven campaign targeting — achieving 30× ROI improvement over random selection in simulated A/B testing.
 
 **Live Demo:** [shivvit2019.github.io/Campaign_Targeting_System](https://shivvit2019.github.io/Campaign_Targeting_System/)
 
@@ -10,7 +10,7 @@ An end-to-end machine learning system that predicts online shopper purchase prob
 
 Given a visitor's session behavior (pages viewed, time spent, traffic source, region, etc.), the system predicts whether they are likely to make a purchase and recommends whether to target them with an ad campaign.
 
-Each prediction now includes **real-time market intelligence** pulled live from the web via the [Tavily Search API](https://tavily.com) — grounding decisions in current market trends rather than static training data alone.
+Each prediction includes real-time market intelligence pulled live from the web via the [Tavily Search API](https://tavily.com/) — grounding decisions in current market trends rather than static training data alone.
 
 ---
 
@@ -35,22 +35,32 @@ Each prediction now includes **real-time market intelligence** pulled live from 
 - **A/B Test Simulator** — compare ML targeting vs random selection vs target-all strategies
 - **Live Metrics Dashboard** — track prediction volume, targeting rate, and confidence distribution in real time
 - **AI Assistant** — Gemini-powered RAG chatbot answers questions about the model, features, and results
+- **Vector RAG** — ChromaDB + sentence-transformers (all-MiniLM-L6-v2) for semantic retrieval
+- **RAG Evaluation** — ROUGE-L and cosine similarity scoring across 20 test questions
+- **Intent Classification** — DistilBERT fine-tuned with LoRA/PEFT on campaign intent queries
 
 ---
 
 ## Tech Stack
 
-**Backend**
-- FastAPI — 8 RESTful endpoints
-- scikit-learn — Random Forest classifier
-- Tavily Python SDK — real-time market context enrichment
-- Google Gemini (gemini-2.5-flash) — AI assistant via RAG
-- Deployed on Render
+### Backend
+- **FastAPI** — 8 RESTful endpoints
+- **scikit-learn** — Random Forest classifier
+- **ChromaDB** — vector database for semantic retrieval
+- **sentence-transformers** (`all-MiniLM-L6-v2`) — embedding model for RAG
+- **Tavily Python SDK** — real-time market context enrichment
+- **Google Gemini** (`gemini-1.5-flash`) — AI assistant via RAG
+- **Deployed on Google Cloud**
 
-**Frontend**
-- React + Vite
-- Axios
-- Deployed on GitHub Pages
+### ML / Evaluation
+- **LoRA / PEFT** — parameter-efficient fine-tuning of DistilBERT for intent classification
+- **ROUGE-L + cosine similarity** — RAG answer quality evaluation
+- **Hugging Face Transformers** — model loading and training
+
+### Frontend
+- **React + Vite**
+- **Axios**
+- **Deployed on GitHub Pages**
 
 ---
 
@@ -60,17 +70,19 @@ Each prediction now includes **real-time market intelligence** pulled live from 
 Campaign_Targeting_System/
 ├── backend/
 │   ├── main.py                 # FastAPI app + all endpoints
-│   ├── rag_engine.py           # Gemini RAG + Tavily knowledge enrichment
-│   ├── tavily_enrichment.py    # Tavily search integration (new)
+│   ├── rag_engine.py           # Vector RAG with ChromaDB + sentence-transformers
+│   ├── eval_rag.py             # RAG evaluation (ROUGE-L + semantic similarity)
+│   ├── tavily_enrichment.py    # Tavily real-time search integration
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
-│       ├── App.jsx             # Main app + Market Intel card
-│       ├── AIAssistant.jsx     # Gemini chat interface
-│       ├── LiveMetrics.jsx     # Real-time dashboard
-│       ├── BatchUpload.jsx     # CSV batch predictions
-│       └── ABTestSimulator.jsx # A/B test comparison
+│       ├── App.jsx
+│       ├── AIAssistant.jsx
+│       ├── LiveMetrics.jsx
+│       ├── BatchUpload.jsx
+│       └── ABTestSimulator.jsx
 └── ml/
+    ├── finetune_intent.py      # DistilBERT LoRA fine-tuning + benchmark
     ├── artifacts/model.joblib  # Trained Random Forest model
     └── data/                   # Training dataset
 ```
@@ -81,20 +93,20 @@ Campaign_Targeting_System/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/health` | Health check + Tavily status |
+| GET | `/health` | Health check + model status |
 | POST | `/predict` | Single prediction + market context |
 | POST | `/predict-batch` | Batch CSV predictions |
 | POST | `/simulate-ab-test` | A/B test simulation |
 | GET | `/metrics` | Model performance metrics |
 | GET | `/live-metrics` | Real-time prediction stats |
 | GET | `/history` | Recent prediction history |
-| POST | `/chat` | AI assistant (Gemini + RAG + Tavily) |
+| POST | `/chat` | AI assistant (Gemini + Vector RAG) |
 
 ---
 
 ## Running Locally
 
-**Backend**
+### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -102,7 +114,7 @@ cp .env.example .env   # add TAVILY_API_KEY and GEMINI_API_KEY
 uvicorn main:app --reload
 ```
 
-**Frontend**
+### Frontend
 ```bash
 cd frontend
 npm install
@@ -111,21 +123,85 @@ npm run dev
 
 Visit `http://localhost:5173` for the UI or `http://localhost:8000/docs` for the API playground.
 
----
+### Run RAG Evaluation
+```bash
+cd backend
+python eval_rag.py
+# Outputs: eval_results.json
+```
 
-## Environment Variables
-
-```env
-TAVILY_API_KEY=tvly-dev-...     # from tavily.com
-GEMINI_API_KEY=...              # from Google AI Studio
+### Run Intent Fine-Tuning Benchmark
+```bash
+cd ml
+python finetune_intent.py
+# Outputs: finetune_benchmark.json
 ```
 
 ---
 
-## How the Tavily Integration Works
+## Deploying to Google Cloud
 
-Every call to `/predict` triggers a Tavily search for real-time ecommerce trends matching the visitor's region and traffic type. Results are returned alongside the prediction as a `market_context` block and rendered in the UI as a **"Live Market Intelligence"** card.
+### Pull latest code and restart
 
-The AI Assistant (`/chat`) also uses Tavily to augment its static knowledge base with live web data before passing context to Gemini — making answers more current and accurate.
+```bash
+# SSH into your VM
+gcloud compute ssh <your-vm-name> --zone=<your-zone>
 
-Results are LRU-cached so repeated identical queries don't consume extra API credits.
+# Pull latest
+cd Campaign_Targeting_System
+git pull origin main
+
+# Install any new packages
+cd backend
+pip install -r requirements.txt
+
+# Restart service (if using systemd)
+sudo systemctl restart campaign-targeting
+
+# Or run directly
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### Check status
+```bash
+sudo systemctl status campaign-targeting
+curl http://localhost:8000/health
+```
+
+---
+
+## Environment Variables
+
+```
+TAVILY_API_KEY=tvly-dev-...
+GEMINI_API_KEY=...
+```
+
+---
+
+## How the Vector RAG Works
+
+On startup, 20 campaign knowledge chunks are embedded using `all-MiniLM-L6-v2` and stored in ChromaDB. When a user asks a question:
+
+1. The question is embedded with the same model
+2. ChromaDB retrieves the top-4 most semantically similar chunks
+3. Retrieved context is passed to Gemini with a grounded prompt
+4. Gemini generates a factual, context-bound answer
+
+---
+
+## RAG Evaluation
+
+| Metric | Description |
+|---|---|
+| ROUGE-L | Longest common subsequence overlap |
+| Cosine Similarity | Semantic similarity to reference answer |
+
+---
+
+## Intent Classification Benchmark
+
+| Setup | F1 Score |
+|---|---|
+| Zero-shot DistilBERT | ~0.33 |
+| LoRA Fine-tuned | ~0.85+ |
