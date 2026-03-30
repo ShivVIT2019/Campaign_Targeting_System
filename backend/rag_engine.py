@@ -32,9 +32,12 @@ KNOWLEDGE_CHUNKS = [
     "Real-time bidding uses automated auctions to buy ad impressions instantly based on targeting criteria.",
 ]
 
-# ── Load embedder directly (avoids broken ChromaDB wrapper) ──────────────────────
+# ── Load models once at startup (not per-request) ────────────────────────────
 print("Loading sentence transformer...")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Initialize Gemini model once (FIX: was creating new instance per query)
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 chroma_client = chromadb.Client()
 collection = chroma_client.get_or_create_collection(name="campaign_knowledge")
@@ -49,13 +52,21 @@ if collection.count() == 0:
     )
     print(f"Indexed {len(KNOWLEDGE_CHUNKS)} chunks.")
 
-def query_rag(user_question: str, top_k: int = 4) -> str:
-    query_embedding = embedder.encode([user_question]).tolist()
-    results = collection.query(query_embeddings=query_embedding, n_results=top_k)
-    retrieved_chunks = results["documents"][0]
-    context = "\n".join([f"- {chunk}" for chunk in retrieved_chunks])
 
-    prompt = f"""You are a campaign targeting assistant with expert knowledge in digital marketing and ML-driven ad targeting.
+def query_rag(user_question: str, top_k: int = 4) -> str:
+    """
+    Query the RAG pipeline:
+    1. Embed user question
+    2. Retrieve top-k relevant chunks from ChromaDB
+    3. Generate answer using Gemini with retrieved context
+    """
+    try:
+        query_embedding = embedder.encode([user_question]).tolist()
+        results = collection.query(query_embeddings=query_embedding, n_results=top_k)
+        retrieved_chunks = results["documents"][0]
+        context = "\n".join([f"- {chunk}" for chunk in retrieved_chunks])
+
+        prompt = f"""You are a campaign targeting assistant with expert knowledge in digital marketing and ML-driven ad targeting.
 
 Use ONLY the context below to answer the user's question. If the answer is not in the context, say "I don't have enough information on that."
 
@@ -66,9 +77,14 @@ User Question: {user_question}
 
 Answer:"""
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(prompt)
-    return response.text.strip()
+        # FIX: Reuse gemini_model instance instead of creating new one each time
+        response = gemini_model.generate_content(prompt)
+        return response.text.strip()
+
+    except Exception as e:
+        print(f"RAG query failed: {e}")
+        return f"Sorry, I encountered an error processing your question: {str(e)}"
+
 
 if __name__ == "__main__":
     print(query_rag("How does retargeting work?"))

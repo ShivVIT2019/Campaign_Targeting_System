@@ -3,22 +3,28 @@ tavily_enrichment.py
 --------------------
 Real-time market context enrichment using Tavily Search API.
 Used in two places:
-  1. /predict  → appends market_context to each prediction response
-  2. /chat     → replaces static CAMPAIGN_KNOWLEDGE with live web data
+  1. /predict  -> appends market_context to each prediction response
+  2. /chat     -> replaces static CAMPAIGN_KNOWLEDGE with live web data
 """
 
 import os
+import logging
 from functools import lru_cache
 from tavily import TavilyClient
 
+logger = logging.getLogger(__name__)
+
 _client = None
 
+
 def get_client() -> TavilyClient:
+    """Lazy-initialize Tavily client. Returns None if API key not set."""
     global _client
     if _client is None:
         api_key = os.getenv("TAVILY_API_KEY")
         if not api_key:
-            raise ValueError("TAVILY_API_KEY not set in environment")
+            logger.warning("TAVILY_API_KEY not set — market enrichment disabled")
+            return None
         _client = TavilyClient(api_key=api_key)
     return _client
 
@@ -36,9 +42,18 @@ def fetch_market_context(region: str, traffic_type: str) -> dict:
             "enriched": bool      # False if Tavily call failed
         }
     """
+    client = get_client()
+    if client is None:
+        return {
+            "query": "",
+            "summary": "Market enrichment unavailable (API key not configured)",
+            "sources": [],
+            "enriched": False
+        }
+
     query = f"online shopping purchase intent {region} {traffic_type} 2025 trends"
     try:
-        results = get_client().search(
+        results = client.search(
             query=query,
             search_depth="basic",
             max_results=3
@@ -52,16 +67,17 @@ def fetch_market_context(region: str, traffic_type: str) -> dict:
             snippet = r.get("content", "")[:180].strip()
             url = r.get("url", "")
             if title and snippet:
-                bullets.append(f"• {title}: {snippet}")
+                bullets.append(f"{title}: {snippet}")
                 sources.append(url)
 
         return {
             "query": query,
-            "summary": "\n".join(bullets),
+            "summary": "\n".join(bullets) if bullets else "No market data found",
             "sources": sources,
-            "enriched": True
+            "enriched": bool(bullets)
         }
     except Exception as e:
+        logger.error(f"Tavily search failed: {e}")
         return {
             "query": query,
             "summary": "",
@@ -77,6 +93,10 @@ def fetch_campaign_knowledge() -> str:
     with live web intelligence about digital campaign targeting trends.
     Falls back to empty string if Tavily unavailable.
     """
+    client = get_client()
+    if client is None:
+        return ""
+
     queries = [
         "digital campaign targeting conversion rate optimization 2025",
         "online shopper purchase intent signals machine learning 2025",
@@ -84,7 +104,6 @@ def fetch_campaign_knowledge() -> str:
     ]
     sections = []
     try:
-        client = get_client()
         for q in queries:
             results = client.search(query=q, search_depth="basic", max_results=2)
             for r in results.get("results", []):
@@ -92,5 +111,6 @@ def fetch_campaign_knowledge() -> str:
                 if snippet:
                     sections.append(snippet)
         return "\n\n".join(sections)
-    except Exception:
-        return ""  # rag_engine will fall back to static knowledge
+    except Exception as e:
+        logger.error(f"Campaign knowledge fetch failed: {e}")
+        return ""
