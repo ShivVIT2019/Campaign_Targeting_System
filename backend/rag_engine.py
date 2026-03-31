@@ -10,6 +10,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 KNOWLEDGE_CHUNKS = [
+    # General marketing concepts
     "Campaign targeting uses demographic filters such as age, gender, income level, and location to reach the right audience.",
     "Behavioral targeting analyzes user activity like browsing history, purchase behavior, and app usage to personalize ads.",
     "Lookalike audiences are built by finding users who share traits with your best existing customers using ML similarity models.",
@@ -30,6 +31,14 @@ KNOWLEDGE_CHUNKS = [
     "Multi-touch attribution assigns credit to multiple touchpoints in a customer journey rather than just the last click.",
     "Audience suppression prevents showing ads to users who already converted to avoid wasted budget.",
     "Real-time bidding uses automated auctions to buy ad impressions instantly based on targeting criteria.",
+    # System-specific knowledge
+    "The confidence tiers in this system are HIGH (distance from threshold > 0.3), MEDIUM (distance > 0.15), and LOW (distance <= 0.15). Higher confidence means the model is more certain about its targeting decision.",
+    "The ML model achieves approximately 30x ROI improvement over random targeting. In A/B test simulations, ML targeting reduces ad spend by 76% while retaining 74% of potential buyers compared to targeting everyone.",
+    "Returning visitors have the highest conversion rates in this system, followed by new visitors and other visitor types. The model uses visitor type as one of its 17 behavioral features.",
+    "The risk score ranges from 0 to 100 and represents the likelihood of a wrong decision. For TARGET decisions, risk = (1 - probability) * 100. For DO_NOT_TARGET decisions, risk = probability * 100.",
+    "The system uses a Random Forest classifier trained on 12,330 online shopping sessions with 17 features including page views, bounce rates, exit rates, page values, visitor type, and month.",
+    "PageValues is the most important feature driving purchase probability, followed by ExitRates, BounceRates, and ProductRelated duration. These features have the highest impact on the model's targeting decisions.",
+    "The prediction threshold is 0.50. Visitors with purchase probability above 50% are marked as TARGET, below 50% as DO_NOT_TARGET. The base conversion rate in the training data is 15.47%.",
 ]
 
 # ── Load models once at startup (not per-request) ────────────────────────────

@@ -67,14 +67,14 @@ app.add_middleware(
 )
 
 
-# Request counter for monitoring
-prediction_count = 1247
+# Request counter for monitoring (starts at 0, counts real predictions only)
+prediction_count = 0
 prediction_history = []
 
 
 # Live metrics tracking
 live_metrics = {
-    "total_predictions": 1247,
+    "total_predictions": 0,
     "target_count": 0,
     "dont_target_count": 0,
     "total_probability": 0.0,
@@ -251,151 +251,7 @@ def model_metrics():
 
     except Exception as e:
         logger.error(f"Detailed metrics failed: {e}", exc_info=True)
-        return {"error": str(e)}
-
-
-@app.post("/predict", response_model=PredictResponse)
-def predict(req: PredictRequest):
-    """Predict purchase probability"""
-    global prediction_count, prediction_history, live_metrics
-    prediction_count += 1
-    prediction_id = f"pred_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{prediction_count}"
-    logger.info(f"Prediction request {prediction_id}: VisitorType={req.VisitorType}, Month={req.Month}")
-
-    try:
-        x = pd.DataFrame([req.model_dump()])
-        for c in ["OperatingSystems", "Browser", "Region", "TrafficType"]:
-            x[c] = x[c].astype(str)
-
-        prob = float(model.predict_proba(x)[:, 1][0])
-        threshold = 0.50
-        decision = "TARGET" if prob >= threshold else "DO_NOT_TARGET"
-
-        distance_from_threshold = abs(prob - threshold)
-        if distance_from_threshold > 0.3:
-            confidence_level = "HIGH"
-        elif distance_from_threshold > 0.15:
-            confidence_level = "MEDIUM"
-        else:
-            confidence_level = "LOW"
-
-        if decision == "TARGET":
-            risk_score = max(0.0, min(100.0, (1 - prob) * 100))
-        else:
-            risk_score = max(0.0, min(100.0, prob * 100))
-
-        logger.info(f"Prediction {prediction_id}: probability={prob:.4f}, decision={decision}, confidence={confidence_level}")
-
-        history_entry = {
-            "prediction_id": prediction_id,
-            "timestamp": datetime.now().isoformat(),
-            "visitor_type": req.VisitorType,
-            "month": req.Month,
-            "probability": prob,
-            "decision": decision,
-            "type": "single"
-        }
-        prediction_history.insert(0, history_entry)
-        prediction_history = prediction_history[:10]
-
-        now = datetime.now()
-        today = now.strftime("%Y-%m-%d")
-        hour = now.hour
-
-        live_metrics["total_predictions"] += 1
-        if decision == "TARGET":
-            live_metrics["target_count"] += 1
-        else:
-            live_metrics["dont_target_count"] += 1
-
-        live_metrics["total_probability"] += prob
-        live_metrics["avg_probabilities"].append(prob)
-
-        if confidence_level == "HIGH":
-            live_metrics["high_confidence_count"] += 1
-        elif confidence_level == "MEDIUM":
-            live_metrics["medium_confidence_count"] += 1
-        else:
-            live_metrics["low_confidence_count"] += 1
-
-        live_metrics["predictions_by_date"][today] += 1
-        live_metrics["predictions_by_hour"][hour] += 1
-        live_metrics["visitor_types"][req.VisitorType] += 1
-        live_metrics["months"][req.Month] += 1
-
-        region_label = req.Region if not req.Region.isdigit() else f"Region {req.Region}"
-        traffic_label = req.TrafficType if not req.TrafficType.isdigit() else f"Traffic Type {req.TrafficType}"
-        market_context = fetch_market_context(region_label, traffic_label)
-
         return {
-            "probability": prob,
-            "decision": decision,
-            "threshold": threshold,
-            "base_rate": float(base_rate),
-            "prediction_id": prediction_id,
-            "timestamp": datetime.now().isoformat(),
-            "confidence_level": confidence_level,
-            "risk_score": float(risk_score),
-            "market_context": market_context
-        }
-
-    except Exception as e:
-        logger.error(f"Prediction failed for {prediction_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
-
-
-@app.get("/metrics")
-def metrics():
-    """Model performance metrics"""
-    try:
-        total = live_metrics["total_predictions"]
-        avg_probability = (live_metrics["total_probability"] / total) if total > 0 else 0
-        target_rate = (live_metrics["target_count"] / total * 100) if total > 0 else 0
-
-        result = {
-            "live_metrics": {
-                "total_predictions": total,
-                "target_count": live_metrics["target_count"],
-                "dont_target_count": live_metrics["dont_target_count"],
-                "targeting_rate": float(target_rate),
-                "average_probability": float(avg_probability * 100),
-                "high_confidence": live_metrics["high_confidence_count"],
-                "medium_confidence": live_metrics["medium_confidence_count"],
-                "low_confidence": live_metrics["low_confidence_count"]
-            },
-            "model_info": {
-                "model_type": "Random Forest Classifier",
-                "features": 17,
-                "training_date": "2024-01-15",
-                "threshold": 0.50,
-                "base_rate": float(base_rate)
-            },
-            "static_metrics": {
-                "roc_auc": 0.8932,
-                "precision": 0.4523,
-                "recall": 0.7412,
-                "f1_score": 0.5621,
-                "accuracy": 0.8532,
-                "confusion_matrix": [[8201, 1235], [802, 2092]]
-            }
-        }
-
-        logger.info(f"Metrics returned: {total} predictions, {target_rate:.2f}% targeting rate")
-        return sanitize_for_json(result)
-
-    except Exception as e:
-        logger.error(f"Metrics calculation failed: {str(e)}", exc_info=True)
-        return {
-            "live_metrics": {
-                "total_predictions": 1247,
-                "target_count": 0,
-                "dont_target_count": 0,
-                "targeting_rate": 0.0,
-                "average_probability": 0.0,
-                "high_confidence": 0,
-                "medium_confidence": 0,
-                "low_confidence": 0
-            },
             "model_info": {
                 "model_type": "Random Forest Classifier",
                 "features": 17,
@@ -613,9 +469,80 @@ async def chat(request: ChatRequest):
     """AI-powered Q&A about campaign analytics using RAG + Gemini"""
     try:
         logger.info(f"Chat question received: {request.question}")
-        answer = query_rag(request.question)       # ← ONLY THIS LINE CHANGED
+        answer = query_rag(request.question)
         logger.info("Chat answer generated successfully")
         return {"answer": answer, "question": request.question}
     except Exception as e:
         logger.error(f"Chat failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+
+@app.get("/metrics")
+def metrics():
+    """Model performance metrics"""
+    try:
+        total = live_metrics["total_predictions"]
+        avg_probability = (live_metrics["total_probability"] / total) if total > 0 else 0
+        target_rate = (live_metrics["target_count"] / total * 100) if total > 0 else 0
+
+        result = {
+            "live_metrics": {
+                "total_predictions": total,
+                "target_count": live_metrics["target_count"],
+                "dont_target_count": live_metrics["dont_target_count"],
+                "targeting_rate": float(target_rate),
+                "average_probability": float(avg_probability * 100),
+                "high_confidence": live_metrics["high_confidence_count"],
+                "medium_confidence": live_metrics["medium_confidence_count"],
+                "low_confidence": live_metrics["low_confidence_count"]
+            },
+            "model_info": {
+                "model_type": "Random Forest Classifier",
+                "features": 17,
+                "training_date": "2024-01-15",
+                "threshold": 0.50,
+                "base_rate": float(base_rate)
+            },
+            "static_metrics": {
+                "roc_auc": 0.8932,
+                "precision": 0.4523,
+                "recall": 0.7412,
+                "f1_score": 0.5621,
+                "accuracy": 0.8532,
+                "confusion_matrix": [[8201, 1235], [802, 2092]]
+            }
+        }
+
+        logger.info(f"Metrics returned: {total} predictions, {target_rate:.2f}% targeting rate")
+        return sanitize_for_json(result)
+
+    except Exception as e:
+        logger.error(f"Metrics calculation failed: {str(e)}", exc_info=True)
+        return {
+            "live_metrics": {
+                "total_predictions": 0,
+                "target_count": 0,
+                "dont_target_count": 0,
+                "targeting_rate": 0.0,
+                "average_probability": 0.0,
+                "high_confidence": 0,
+                "medium_confidence": 0,
+                "low_confidence": 0
+            },
+            "model_info": {
+                "model_type": "Random Forest Classifier",
+                "features": 17,
+                "training_date": "2024-01-15",
+                "threshold": 0.50,
+                "base_rate": float(base_rate)
+            },
+            "static_metrics": {
+                "roc_auc": 0.8932,
+                "precision": 0.4523,
+                "recall": 0.7412,
+                "f1_score": 0.5621,
+                "accuracy": 0.8532,
+                "confusion_matrix": [[8201, 1235], [802, 2092]]
+            },
+            "error": str(e)
+        }
