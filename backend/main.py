@@ -324,6 +324,96 @@ def get_live_metrics():
         return {"error": str(e)}
 
 
+@app.post("/predict", response_model=PredictResponse)
+def predict(req: PredictRequest):
+    """Predict purchase probability"""
+    global prediction_count, prediction_history, live_metrics
+    prediction_count += 1
+    prediction_id = f"pred_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{prediction_count}"
+    logger.info(f"Prediction request {prediction_id}: VisitorType={req.VisitorType}, Month={req.Month}")
+
+    try:
+        x = pd.DataFrame([req.model_dump()])
+        for c in ["OperatingSystems", "Browser", "Region", "TrafficType"]:
+            x[c] = x[c].astype(str)
+
+        prob = float(model.predict_proba(x)[:, 1][0])
+        threshold = 0.50
+        decision = "TARGET" if prob >= threshold else "DO_NOT_TARGET"
+
+        distance_from_threshold = abs(prob - threshold)
+        if distance_from_threshold > 0.3:
+            confidence_level = "HIGH"
+        elif distance_from_threshold > 0.15:
+            confidence_level = "MEDIUM"
+        else:
+            confidence_level = "LOW"
+
+        if decision == "TARGET":
+            risk_score = max(0.0, min(100.0, (1 - prob) * 100))
+        else:
+            risk_score = max(0.0, min(100.0, prob * 100))
+
+        logger.info(f"Prediction {prediction_id}: probability={prob:.4f}, decision={decision}, confidence={confidence_level}")
+
+        history_entry = {
+            "prediction_id": prediction_id,
+            "timestamp": datetime.now().isoformat(),
+            "visitor_type": req.VisitorType,
+            "month": req.Month,
+            "probability": prob,
+            "decision": decision,
+            "type": "single"
+        }
+        prediction_history.insert(0, history_entry)
+        prediction_history = prediction_history[:10]
+
+        now = datetime.now()
+        today = now.strftime("%Y-%m-%d")
+        hour = now.hour
+
+        live_metrics["total_predictions"] += 1
+        if decision == "TARGET":
+            live_metrics["target_count"] += 1
+        else:
+            live_metrics["dont_target_count"] += 1
+
+        live_metrics["total_probability"] += prob
+        live_metrics["avg_probabilities"].append(prob)
+
+        if confidence_level == "HIGH":
+            live_metrics["high_confidence_count"] += 1
+        elif confidence_level == "MEDIUM":
+            live_metrics["medium_confidence_count"] += 1
+        else:
+            live_metrics["low_confidence_count"] += 1
+
+        live_metrics["predictions_by_date"][today] += 1
+        live_metrics["predictions_by_hour"][hour] += 1
+        live_metrics["visitor_types"][req.VisitorType] += 1
+        live_metrics["months"][req.Month] += 1
+
+        region_label = req.Region if not req.Region.isdigit() else f"Region {req.Region}"
+        traffic_label = req.TrafficType if not req.TrafficType.isdigit() else f"Traffic Type {req.TrafficType}"
+        market_context = fetch_market_context(region_label, traffic_label)
+
+        return {
+            "probability": prob,
+            "decision": decision,
+            "threshold": threshold,
+            "base_rate": float(base_rate),
+            "prediction_id": prediction_id,
+            "timestamp": datetime.now().isoformat(),
+            "confidence_level": confidence_level,
+            "risk_score": float(risk_score),
+            "market_context": market_context
+        }
+
+    except Exception as e:
+        logger.error(f"Prediction failed for {prediction_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+
 @app.post("/predict-batch")
 async def predict_batch(file: UploadFile = File(...)):
     """Batch prediction from CSV upload"""
