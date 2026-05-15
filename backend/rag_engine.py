@@ -46,7 +46,7 @@ print("Loading sentence transformer...")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Initialize Gemini model once (FIX: was creating new instance per query)
-gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 chroma_client = chromadb.Client()
 collection = chroma_client.get_or_create_collection(name="campaign_knowledge")
