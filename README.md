@@ -1,6 +1,6 @@
 # 🎯 AI-Powered Campaign Targeting System
 
-An end-to-end machine learning system that predicts online shopper purchase probability to enable data-driven campaign targeting — achieving 30× ROI improvement over random selection in simulated A/B testing.
+An end-to-end machine learning system that predicts online shopper purchase probability to enable data-driven campaign targeting. Random Forest classifier trained on the UCI Online Shoppers dataset (12,330 sessions, 17 features), with a Gemini + ChromaDB retrieval assistant over the campaign analytics.
 
 **Live Demo:** [shivvit2019.github.io/Campaign_Targeting_System](https://shivvit2019.github.io/Campaign_Targeting_System/)
 
@@ -20,10 +20,12 @@ Each prediction includes real-time market intelligence pulled live from the web 
 |---|---|
 | Model | Random Forest Classifier |
 | Training Data | 12,330 online shopping sessions |
-| AUC-ROC | 89.32% |
-| Ad Spend Reduction | 76% |
-| Buyer Retention | 74% |
-| ROI vs Random Targeting | ~30× |
+| ROC-AUC (RandomForest) | 0.8932 (per `ml/train.ipynb` saved output) |
+| Class imbalance | 15.47% (base conversion rate) |
+| Training rows | 12,330 (UCI Online Shoppers Intention dataset) |
+| Features | 17 behavioral + session attributes |
+
+*Note: spend reduction and buyer retention depend on the chosen confidence threshold. The `/simulate-ab-test` endpoint lets you explore the trade-off curve rather than quoting a fixed pair of numbers.*
 
 ---
 
